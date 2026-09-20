@@ -21,11 +21,13 @@ jobs:
           rm -rf android-project
           mkdir android-project
           unzip -q HomeCare-Android-v3-CLEAN.zip -d android-project
+
       - name: Fix Gradle configuration
         shell: bash
         run: |
           find android-project -name "build.gradle.kts" -type f -exec \
             sed -i 's/minifyEnabled[[:space:]]*=[[:space:]]*false/isMinifyEnabled = false/g' {} +
+
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
@@ -38,6 +40,7 @@ jobs:
           gradle-version: '8.10.2'
 
       - name: Install Android SDK
+        shell: bash
         run: |
           SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
 
@@ -57,14 +60,16 @@ jobs:
             "platforms;android-35" \
             "build-tools;35.0.0"
 
-            - name: Build APK
+      - name: Build APK
         working-directory: android-project
         run: gradle --no-daemon assembleDebug
 
       - name: Verify APK
         working-directory: android-project
+        shell: bash
         run: |
           set -e
+
           APK="app/build/outputs/apk/debug/app-debug.apk"
 
           if [ ! -f "$APK" ]; then
@@ -77,7 +82,7 @@ jobs:
           ls -lh "$APK"
 
           echo "APK SIZE:"
-          stat -c%s "$APK" bytes
+          stat -c%s "$APK"
 
           echo "Checking APK integrity..."
           unzip -t "$APK" >/dev/null
