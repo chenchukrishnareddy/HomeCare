@@ -21,7 +21,11 @@ jobs:
           rm -rf android-project
           mkdir android-project
           unzip -q HomeCare-Android-v3-CLEAN.zip -d android-project
-
+      - name: Fix Gradle configuration
+        shell: bash
+        run: |
+          find android-project -name "build.gradle.kts" -type f -exec \
+            sed -i 's/minifyEnabled[[:space:]]*=[[:space:]]*false/isMinifyEnabled = false/g' {} +
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
