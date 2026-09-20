@@ -20,7 +20,7 @@ jobs:
         run: |
           rm -rf android-project
           mkdir android-project
-          unzip -q HomeCare-Android-v4-FULL.zip -d android-project
+          unzip -q HomeCare-Android-v5-COMPLETE-5MB.zip -d android-project
 
       - name: Fix Gradle configuration
         shell: bash
