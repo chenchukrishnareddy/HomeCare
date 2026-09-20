@@ -2,8 +2,7 @@ name: Build HomeCare APK
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -11,337 +10,56 @@ permissions:
 
 jobs:
   build:
-    name: Build HomeCare APK
     runs-on: ubuntu-24.04
 
     steps:
-
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Extract HomeCare v3
-        shell: bash
+      - name: Extract HomeCare project
         run: |
-          set -e
-
           rm -rf android-project
-          mkdir -p android-project
-
+          mkdir android-project
           unzip -q HomeCare-Android-v3-CLEAN.zip -d android-project
 
-          PROJECT_DIR=$(find "$GITHUB_WORKSPACE/android-project" \
-            -type f \
-            -name "settings.gradle.kts" \
-            -print -quit | xargs -r dirname)
-
-          if [ -z "$PROJECT_DIR" ]; then
-            echo "ERROR: Android project not found."
-            echo "ZIP CONTENTS:"
-            unzip -l HomeCare-Android-v3-CLEAN.zip
-            exit 1
-          fi
-
-          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
-
-          echo "Found Android project:"
-          echo "$PROJECT_DIR"
-
-      - name: Set up Java 17
+      - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: '17'
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: "8.10.2"
+          gradle-version: '8.10.2'
 
-      - name: Configure Android SDK
-        shell: bash
+      - name: Install Android SDK
         run: |
-          set -e
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
 
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
-
-          if [ -n "$ANDROID_HOME" ]; then
-            SDK="$ANDROID_HOME"
-          elif [ -n "$ANDROID_SDK_ROOT" ]; then
-            SDK="$ANDROID_SDK_ROOT"
-          else
-            SDK="/usr/local/lib/android/sdk"
+          if [ ! -x "$SDKMANAGER" ]; then
+            SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -type f | head -n 1)"
           fi
 
-          echo "ANDROID_SDK=$SDK" >> "$GITHUB_ENV"
-
-          if [ -x "$SDK/cmdline-tools/latest/bin/sdkmanager" ]; then
-            echo "$SDK/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
-          elif [ -x "$SDK/cmdline-tools/16.0/bin/sdkmanager" ]; then
-            echo "$SDK/cmdline-tools/16.0/bin" >> "$GITHUB_PATH"
-          else
-            echo "ERROR: sdkmanager not found."
-            find "$SDK" -name sdkmanager -type f 2>/dev/null || true
-            exit 1
-          fi
-
-      - name: Accept Android licenses
-        shell: bash
-        run: |
-          set -e
-
-          SDKMANAGER=$(find "$ANDROID_SDK" \
-            -name sdkmanager \
-            -type f \
-            -print -quit)
-
-          if [ -z "$SDKMANAGER" ]; then
-            echo "ERROR: sdkmanager not found."
+          if [ -z "$SDKMANAGER" ] || [ ! -f "$SDKMANAGER" ]; then
+            echo "sdkmanager not found"
             exit 1
           fi
 
           yes | "$SDKMANAGER" --licenses >/dev/null || true
-
-      - name: Install Android SDK packages
-        shell: bash
-        run: |
-          set -e
-
-          SDKMANAGER=$(find "$ANDROID_SDK" \
-            -name sdkmanager \
-            -type f \
-            -print -quit)
 
           "$SDKMANAGER" \
             "platform-tools" \
             "platforms;android-35" \
             "build-tools;35.0.0"
 
-      - name: Verify Android environment
-        shell: bash
-        run: |
-          echo "Java:"
-          java -version
+      - name: Build APK
+        working-directory: android-project
+        run: gradle --no-daemon assembleDebug
 
-          echo "Gradle:"
-          gradle --version
-
-          echo "Android SDK:"
-          echo "$ANDROID_SDK"
-
-          echo "Installed packages:"
-          find "$ANDROID_SDK/platforms" -maxdepth 1 -type d 2>/dev/null || true
-
-      - name: Build HomeCare Debug APK
-        working-directory: ${{ env.PROJECT_DIR }}
-        shell: bash
-        run: |
-          set -e
-
-          echo "================================"
-          echo "BUILDING HOMECARE APK"
-          echo "================================"
-
-          gradle \
-            --no-daemon \
-            --stacktrace \
-            assembleDebug
-
-      - name: Verify APK
-        working-directory: ${{ env.PROJECT_DIR }}
-        shell: bash
-        run: |
-          set -e
-
-          APK="app/build/outputs/apk/debug/app-debug.apk"
-
-          if [ ! -f "$APK" ]; then
-            echo "ERROR: APK was not generated."
-            exit 1
-          fi
-
-          echo "================================"
-          echo "APK SUCCESSFULLY CREATED"
-          echo "================================"
-
-          ls -lh "$APK"
-
-      - name: Upload HomeCare APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: HomeCare-APK
-          path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: errorname: Build HomeCare APK
-
-on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
-
-permissions:
-  contents: read
-
-jobs:
-  build:
-    name: Build HomeCare APK
-    runs-on: ubuntu-24.04
-
-    steps:
-
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Extract HomeCare v3
-        shell: bash
-        run: |
-          set -e
-
-          rm -rf android-project
-          mkdir -p android-project
-
-          unzip -q HomeCare-Android-v3-CLEAN.zip -d android-project
-
-          PROJECT_DIR=$(find "$GITHUB_WORKSPACE/android-project" \
-            -type f \
-            -name "settings.gradle.kts" \
-            -print -quit | xargs -r dirname)
-
-          if [ -z "$PROJECT_DIR" ]; then
-            echo "ERROR: Android project not found."
-            echo "ZIP CONTENTS:"
-            unzip -l HomeCare-Android-v3-CLEAN.zip
-            exit 1
-          fi
-
-          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
-
-          echo "Found Android project:"
-          echo "$PROJECT_DIR"
-
-      - name: Set up Java 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "17"
-
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: "8.10.2"
-
-      - name: Configure Android SDK
-        shell: bash
-        run: |
-          set -e
-
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
-
-          if [ -n "$ANDROID_HOME" ]; then
-            SDK="$ANDROID_HOME"
-          elif [ -n "$ANDROID_SDK_ROOT" ]; then
-            SDK="$ANDROID_SDK_ROOT"
-          else
-            SDK="/usr/local/lib/android/sdk"
-          fi
-
-          echo "ANDROID_SDK=$SDK" >> "$GITHUB_ENV"
-
-          if [ -x "$SDK/cmdline-tools/latest/bin/sdkmanager" ]; then
-            echo "$SDK/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
-          elif [ -x "$SDK/cmdline-tools/16.0/bin/sdkmanager" ]; then
-            echo "$SDK/cmdline-tools/16.0/bin" >> "$GITHUB_PATH"
-          else
-            echo "ERROR: sdkmanager not found."
-            find "$SDK" -name sdkmanager -type f 2>/dev/null || true
-            exit 1
-          fi
-
-      - name: Accept Android licenses
-        shell: bash
-        run: |
-          set -e
-
-          SDKMANAGER=$(find "$ANDROID_SDK" \
-            -name sdkmanager \
-            -type f \
-            -print -quit)
-
-          if [ -z "$SDKMANAGER" ]; then
-            echo "ERROR: sdkmanager not found."
-            exit 1
-          fi
-
-          yes | "$SDKMANAGER" --licenses >/dev/null || true
-
-      - name: Install Android SDK packages
-        shell: bash
-        run: |
-          set -e
-
-          SDKMANAGER=$(find "$ANDROID_SDK" \
-            -name sdkmanager \
-            -type f \
-            -print -quit)
-
-          "$SDKMANAGER" \
-            "platform-tools" \
-            "platforms;android-35" \
-            "build-tools;35.0.0"
-
-      - name: Verify Android environment
-        shell: bash
-        run: |
-          echo "Java:"
-          java -version
-
-          echo "Gradle:"
-          gradle --version
-
-          echo "Android SDK:"
-          echo "$ANDROID_SDK"
-
-          echo "Installed packages:"
-          find "$ANDROID_SDK/platforms" -maxdepth 1 -type d 2>/dev/null || true
-
-      - name: Build HomeCare Debug APK
-        working-directory: ${{ env.PROJECT_DIR }}
-        shell: bash
-        run: |
-          set -e
-
-          echo "================================"
-          echo "BUILDING HOMECARE APK"
-          echo "================================"
-
-          gradle \
-            --no-daemon \
-            --stacktrace \
-            assembleDebug
-
-      - name: Verify APK
-        working-directory: ${{ env.PROJECT_DIR }}
-        shell: bash
-        run: |
-          set -e
-
-          APK="app/build/outputs/apk/debug/app-debug.apk"
-
-          if [ ! -f "$APK" ]; then
-            echo "ERROR: APK was not generated."
-            exit 1
-          fi
-
-          echo "================================"
-          echo "APK SUCCESSFULLY CREATED"
-          echo "================================"
-
-          ls -lh "$APK"
-
-      - name: Upload HomeCare APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: HomeCare-APK
-          path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/debug/app-debug.apk
+          path: android-project/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
