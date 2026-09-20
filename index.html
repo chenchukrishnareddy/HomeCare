@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2f6f4e">
+<title>HomeCare — Home Maintenance</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div><div class="brand">HomeCare</div><div class="subtitle">A calmer, cleaner home</div></div>
+  <button id="addBtn" class="primary">+ Add task</button>
+</header>
+<main>
+  <section class="hero">
+    <div><p class="eyebrow">TODAY</p><h1 id="greeting">Good day 👋</h1><p id="dateText"></p></div>
+    <div class="progress"><strong id="progressText">0%</strong><span>done today</span><div class="bar"><i id="progressBar"></i></div></div>
+  </section>
+  <nav class="filters" aria-label="Task filters">
+    <button class="active" data-filter="all">All</button>
+    <button data-filter="today">Today</button>
+    <button data-filter="weekly">Weekly</button>
+    <button data-filter="monthly">Monthly</button>
+    <button data-filter="garden">Garden</button>
+    <button data-filter="maintenance">Maintenance</button>
+  </nav>
+  <section id="taskList" class="task-list"></section>
+  <section class="tips"><div><span>💡</span><div><b>HomeCare tip</b><p id="tip"></p></div></div></section>
+</main>
+
+<dialog id="taskDialog">
+<form method="dialog" id="taskForm">
+<h2>Add home task</h2>
+<label>Task name<input id="taskName" required placeholder="e.g. Sweep living room"></label>
+<label>Category<select id="taskCategory">
+<option value="today">Today</option><option value="weekly">Weekly</option>
+<option value="monthly">Monthly</option><option value="garden">Garden</option>
+<option value="maintenance">Maintenance</option></select></label>
+<label>Repeat<select id="taskRepeat">
+<option value="daily">Every day</option><option value="weekly">Every week</option>
+<option value="monthly">Every month</option><option value="none">One time</option></select></label>
+<label>Assign to<input id="taskPerson" placeholder="Family member (optional)"></label>
+<div class="dialog-actions"><button type="button" id="cancelBtn">Cancel</button><button class="primary" type="submit">Add task</button></div>
+</form>
+</dialog>
+<script src="app.js"></script>
+</body>
+</html>
