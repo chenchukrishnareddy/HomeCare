@@ -57,9 +57,32 @@ jobs:
             "platforms;android-35" \
             "build-tools;35.0.0"
 
-      - name: Build APK
+            - name: Build APK
         working-directory: android-project
         run: gradle --no-daemon assembleDebug
+
+      - name: Verify APK
+        working-directory: android-project
+        run: |
+          set -e
+          APK="app/build/outputs/apk/debug/app-debug.apk"
+
+          if [ ! -f "$APK" ]; then
+            echo "APK NOT FOUND"
+            find app/build/outputs -type f -name "*.apk" -print || true
+            exit 1
+          fi
+
+          echo "APK FOUND:"
+          ls -lh "$APK"
+
+          echo "APK SIZE:"
+          stat -c%s "$APK" bytes
+
+          echo "Checking APK integrity..."
+          unzip -t "$APK" >/dev/null
+
+          echo "APK CHECK PASSED"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
