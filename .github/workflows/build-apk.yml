@@ -27,7 +27,7 @@ jobs:
           rm -rf android-project
           mkdir -p android-project
 
-          unzip -q HomeCare-Android-v1.zip -d android-project
+          unzip -q HomeCare-Android-v2-CLEAN.zip -d android-project
 
           PROJECT_DIR=$(find "$GITHUB_WORKSPACE/android-project" \
             -type f \
